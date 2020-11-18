@@ -15,7 +15,7 @@ export class SoundDataComponent implements OnInit {
   constructor(private http: HttpClient) {
 
     this.http.get(this.url).subscribe(responseData => {
-      console.log(responseData);
+      this.value = responseData + '';
     });
    }
 
