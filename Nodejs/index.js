@@ -1,10 +1,11 @@
 const express = require('express');
 const request = require('request');
+var path = require('path');
 
 const app = express();
 const port = 8000;
 
-let sensorValue = 323534;
+let sensorValue = 0;
 
 
 app.get('/', (req, res) => {
@@ -13,12 +14,13 @@ app.get('/', (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type'); // If needed
   res.setHeader('Access-Control-Allow-Credentials', true); // If needed
   
-  res.send(sensorValue + "");  
+  res.send(sensorValue);  
+  //res.sendFile(path.join(__dirname + '/index.html'));
 });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}!`);
-/*
+
   setInterval(function () {
     request(
       {
@@ -42,5 +44,5 @@ app.listen(port, () => {
       }
     );
   }, 1000);
-*/
+
 });
