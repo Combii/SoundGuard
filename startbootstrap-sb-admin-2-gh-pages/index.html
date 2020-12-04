@@ -929,6 +929,7 @@
         let secondInt = this.a2hex(data.substring(2, 4));
         let thirdInt = this.a2hex(data.substring(4, 6));
 
+        //Happens if call is made before setup.
         if(firstInt === null || secondInt === null || thirdInt === null){
             return 0;
         }
