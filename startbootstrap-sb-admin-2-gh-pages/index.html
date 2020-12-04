@@ -912,7 +912,7 @@
 
     //Gets live data from Arduino
     getData();
-    getSound();
+    //getSound();
 
     function getData(){
         const Http = new XMLHttpRequest();
@@ -941,7 +941,7 @@
         return result;
     }
 
-  function a2hex(str) {
+    function a2hex(str) {
         try{
             var asciiVal = str.match(/.{1,2}/g).map(function(v){
             return String.fromCharCode(parseInt(v, 16));
