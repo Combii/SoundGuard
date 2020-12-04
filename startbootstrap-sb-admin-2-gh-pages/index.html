@@ -912,7 +912,6 @@
 
     //Gets live data from Arduino
     getData();
-    getSound();
 
     function getData(){
         const Http = new XMLHttpRequest();
@@ -941,7 +940,7 @@
         return result;
     }
 
-  function a2hex(str) {
+    function a2hex(str) {
         try{
             var asciiVal = str.match(/.{1,2}/g).map(function(v){
             return String.fromCharCode(parseInt(v, 16));
@@ -956,6 +955,9 @@
 
     }
     
+
+    getSound();
+
     var audioContext = null;
     var meter = null;
 
@@ -967,6 +969,7 @@
             // grab an audio context
             audioContext = new AudioContext();
 
+            while(true){
             // Attempt to get audio input
             try {
               // monkeypatch getUserMedia
@@ -994,6 +997,8 @@
             } catch (e) {
               alert('getUserMedia threw exception :' + e);
             }
+            wait(5000);
+        }
         }
 
     function didntGetStream() {
@@ -1006,10 +1011,10 @@
     
       // Create a new volume meter and connect it.
       meter = createAudioMeter(audioContext);
-    
-      console.log(meter);
-    
+      
+      console.log("MIC LEVEL:" + meter.volume);
       mediaStreamSource.connect(meter);
+      
     }
 };
 
