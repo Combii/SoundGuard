@@ -912,7 +912,6 @@
 
     //Gets live data from Arduino
     getData();
-    //getSound();
 
     function getData(){
         const Http = new XMLHttpRequest();
@@ -955,133 +954,99 @@
         
 
     }
+
+    getVolume();
     
-    var audioContext = null;
-    var meter = null;
 
-    function getSound() {
-        window.onload = function () {
-            // monkeypatch Web Audio
-            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+    function getVolume(){
+        navigator.getUserMedia = navigator.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia;
 
-            // grab an audio context
-            audioContext = new AudioContext();
+        if (navigator.getUserMedia) {
+          navigator.getUserMedia({
+              audio: true
+    },
+    function(stream) {
+      audioContext = new AudioContext();
+      analyser = audioContext.createAnalyser();
+      microphone = audioContext.createMediaStreamSource(stream);
+      javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
-            // Attempt to get audio input
-            try {
-              // monkeypatch getUserMedia
-              navigator.getUserMedia =
-                navigator.getUserMedia ||
-                navigator.webkitGetUserMedia ||
-                navigator.mozGetUserMedia;
-            
-              // ask for an audio input
-              navigator.getUserMedia(
-                {
-                  audio: {
-                    mandatory: {
-                      googEchoCancellation: 'false',
-                      googAutoGainControl: 'false',
-                      googNoiseSuppression: 'false',
-                      googHighpassFilter: 'false',
-                    },
-                    optional: [],
-                  },
-                },
-                gotStream,
-                didntGetStream
-              );
-            } catch (e) {
-              alert('getUserMedia threw exception :' + e);
-            }
+      analyser.smoothingTimeConstant = 0.8;
+      analyser.fftSize = 1024;
+
+      microphone.connect(analyser);
+      analyser.connect(javascriptNode);
+      javascriptNode.connect(audioContext.destination);
+
+      javascriptNode.onaudioprocess = function() {
+          var array = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(array);
+          var values = 0;
+
+          var length = array.length;
+          for (var i = 0; i < length; i++) {
+            values += (array[i]);
+          }
+
+          var average = values / length;
+
+          console.log(average);
         }
-
-    function didntGetStream() {
-      alert('Stream generation failed.');
+    },
+    function(err) {
+      console.log("The following error occured: " + err.name)
+    });
+} else {
+  console.log("getUserMedia not supported");
+}
     }
-    var mediaStreamSource = null;
-    function gotStream(stream) {
-      // Create an AudioNode from the stream.
-      mediaStreamSource = audioContext.createMediaStreamSource(stream);
-    
-      // Create a new volume meter and connect it.
-      meter = createAudioMeter(audioContext);
-    
-      console.log(meter);
-    
-      mediaStreamSource.connect(meter);
-    }
-};
-
-    function createAudioMeter(audioContext,clipLevel,averaging,clipLag) {
-    	var processor = audioContext.createScriptProcessor(512);
-    	processor.onaudioprocess = volumeAudioProcess;
-    	processor.clipping = false;
-    	processor.lastClip = 0;
-    	processor.volume = 0;
-    	processor.clipLevel = clipLevel || 0.98;
-    	processor.averaging = averaging || 0.95;
-    	processor.clipLag = clipLag || 750;
-
-    	// this will have no effect, since we don't copy the input to the output,
-    	// but works around a current Chrome bug.
-    	processor.connect(audioContext.destination);
-
-    	processor.checkClipping =
-    		function(){
-    			if (!this.clipping)
-    				return false;
-    			if ((this.lastClip + this.clipLag) < window.performance.now())
-    				this.clipping = false;
-    			return this.clipping;
-    		};
-
-    	processor.shutdown =
-    		function(){
-    			this.disconnect();
-    			this.onaudioprocess = null;
-    		};
-
-    	return processor;
-    }
-
-    function volumeAudioProcess( event ) {
-    	var buf = event.inputBuffer.getChannelData(0);
-        var bufLength = buf.length;
-    	var sum = 0;
-        var x;
-
-    	// Do a root-mean-square on the samples: sum up the squares...
-        for (var i=0; i<bufLength; i++) {
-        	x = buf[i];
-        	if (Math.abs(x)>=this.clipLevel) {
-        		this.clipping = true;
-        		this.lastClip = window.performance.now();
-        	}
-        	sum += x * x;
-        }
-
-        // ... then take the square root of the sum.
-        var rms =  Math.sqrt(sum / bufLength);
-
-        // Now smooth this out with the averaging factor applied
-        // to the previous sample - take the max here because we
-        // want "fast attack, slow release."
-        this.volume = Math.max(rms, this.volume*this.averaging);
-    }
-        
-    function wait(ms) {
-      var start = new Date().getTime();
-      var end = start;
-      while (end < start + ms) {
-        end = new Date().getTime();
-      }
-    }
-
 
 
     
     </script>
+
+
+<script type="text/javascript">
+    navigator.webkitGetUserMedia.getUserMedia = ({audio:true, video:true}, function(stream){
+        // audioContext = new webkitAudioContext(); deprecated  OLD!!
+        audioContext = new AudioContext(); // NEW!!
+        analyser = audioContext.createAnalyser();
+        microphone = audioContext.createMediaStreamSource(stream);
+        javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+    
+        analyser.smoothingTimeConstant = 0.3;
+        analyser.fftSize = 1024;
+    
+        microphone.connect(analyser);
+        analyser.connect(javascriptNode);
+        javascriptNode.connect(audioContext.destination);
+    
+        //canvasContext = $("#canvas")[0].getContext("2d");
+        canvasContext = document.getElementById("test");
+        canvasContext= canvasContext.getContext("2d");
+    
+        javascriptNode.onaudioprocess = function() {
+            var array =  new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(array);
+            var values = 0;
+    
+            var length = array.length;
+            for (var i = 0; i < length; i++) {
+                values += array[i];
+            }
+    
+            var average = values / length;
+            canvasContext.clearRect(0, 0, 60, 130);
+            canvasContext.fillStyle = '#00ff00';
+            canvasContext.fillRect(0,130-average,25,130);
+        }
+    
+    }  
+    );
+    </script>
+    <canvas id="test" style="background-color: black;"></canvas>
 </body>
 
 </html>
